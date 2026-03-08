@@ -1,5 +1,6 @@
 ﻿using Palisades.Helpers;
 using Sentry;
+using System;
 using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
@@ -34,6 +35,19 @@ namespace Palisades
 
         protected override void OnExit(ExitEventArgs e)
         {
+            try
+            {
+                int restored = PalisadesManager.RestoreManagedItemsToDesktop();
+                if (restored > 0)
+                {
+                    PalisadesManager.RemoveMissingShortcutsFromAllFences();
+                }
+            }
+            catch (Exception ex)
+            {
+                SentrySdk.CaptureException(ex);
+            }
+
             if (_isPrimaryInstance)
             {
                 _singleInstanceMutex.ReleaseMutex();

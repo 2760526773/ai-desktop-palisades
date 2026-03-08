@@ -204,6 +204,39 @@ namespace Palisades
             return result;
         }
 
+        public static int RestoreManagedItemsToDesktop()
+        {
+            string managedRoot = PDirectory.GetManagedItemsRootDirectory();
+            if (!Directory.Exists(managedRoot))
+            {
+                return 0;
+            }
+
+            string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+            PDirectory.EnsureExists(desktop);
+            int restored = 0;
+
+            foreach (string categoryDir in Directory.GetDirectories(managedRoot, "*", SearchOption.TopDirectoryOnly))
+            {
+                foreach (string dir in Directory.GetDirectories(categoryDir, "*", SearchOption.TopDirectoryOnly))
+                {
+                    MovePathToDirectory(dir, desktop);
+                    restored++;
+                }
+
+                foreach (string file in Directory.GetFiles(categoryDir, "*", SearchOption.TopDirectoryOnly))
+                {
+                    MovePathToDirectory(file, desktop);
+                    restored++;
+                }
+
+                TryDeleteEmptyDirectory(categoryDir);
+            }
+
+            TryDeleteEmptyDirectory(managedRoot);
+            return restored;
+        }
+
         public static Shortcut? MovePathIntoFenceAndBuildShortcut(string sourcePath, PalisadeViewModel fence)
         {
             if (fence == null || string.IsNullOrWhiteSpace(sourcePath))
@@ -357,6 +390,20 @@ namespace Palisades
 
             File.Move(sourcePath, destination);
             return NormalizePath(destination);
+        }
+
+        private static void TryDeleteEmptyDirectory(string path)
+        {
+            try
+            {
+                if (Directory.Exists(path) && !Directory.EnumerateFileSystemEntries(path).Any())
+                {
+                    Directory.Delete(path, false);
+                }
+            }
+            catch
+            {
+            }
         }
 
         private static string GetUniquePath(string path)
