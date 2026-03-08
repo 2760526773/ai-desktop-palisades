@@ -15,8 +15,8 @@
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Style="{StaticResource MaterialDesignWindow}"
-        Title="About Palisades"
-        Width="408"
+        Title="关于 Palisades"
+        Width="430"
         SizeToContent="Height"
         ResizeMode="NoResize">
     <Window.DataContext>
@@ -30,19 +30,19 @@
                 <Label Content="{Binding ReleaseDate}" />
             </StackPanel>
             <TextBlock TextAlignment="Justify" TextWrapping="Wrap" Foreground="#DDFFFFFF" Margin="0,20,0,0" Padding="20,0,20,0">
-                <Run Text="This software is maintained by " />
+                <Run Text="作者：" />
                 <helpers:HyperlinkCommander Foreground="{StaticResource MaterialDesignDarkForeground}" Command="{Binding NavigateCommand}" CommandParameter="https://stouder.io/">
                     <Run Text="Xavier Stouder" />
                 </helpers:HyperlinkCommander>
-                <Run Text=" and released under MIT licence. You can report issues, check for updates and even contribute on the " />
+                <Run Text="。项目使用 MIT 协议开源，仓库地址：" />
                 <helpers:HyperlinkCommander Foreground="{StaticResource MaterialDesignDarkForeground}" Command="{Binding NavigateCommand}" CommandParameter="https://github.com/Xstoudi/Palisades">
-                    <Run Text="Github repository." />
+                    <Run Text="GitHub / Xstoudi/Palisades" />
                 </helpers:HyperlinkCommander>
             </TextBlock>
             <StackPanel HorizontalAlignment="Center">
-                <Label FontSize="22" HorizontalAlignment="Center" Content="Credits" Margin="0,20,0,0" />
+                <Label FontSize="22" HorizontalAlignment="Center" Content="致谢" Margin="0,20,0,0" />
                 <TextBlock TextAlignment="Justify" TextWrapping="Wrap" Foreground="#DDFFFFFF" Margin="0,5,0,5" Padding="20,0,20,0">
-                    Palisades uses the following open source libraries to work.
+                    Palisades 基于以下优秀开源项目构建：
                 </TextBlock>
                 <Label Padding="20,0,20,0">
                     <helpers:HyperlinkCommander Foreground="{StaticResource MaterialDesignDarkForeground}" Command="{Binding NavigateCommand}" CommandParameter="http://materialdesigninxaml.net/">MaterialDesignThemes</helpers:HyperlinkCommander>

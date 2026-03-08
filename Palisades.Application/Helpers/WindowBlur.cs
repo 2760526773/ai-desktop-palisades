@@ -6,9 +6,6 @@ using System.Windows.Interop;
 
 namespace Palisades.Helpers
 {
-    /**
-     * Source : https://gist.github.com/walterlv/752669f389978440d344941a5fcd5b00#file-windowblur-cs
-     */
     internal class WindowBlur
     {
         internal static readonly DependencyProperty IsEnabledProperty = DependencyProperty.RegisterAttached(
@@ -127,26 +124,49 @@ namespace Palisades.Helpers
         {
             var windowHelper = new WindowInteropHelper(window);
 
-            var accent = new AccentPolicy
+            // Windows 10/11: acrylic first; fallback to blur behind.
+            if (!TryApplyAccent(windowHelper.Handle, AccentState.ACCENT_ENABLE_ACRYLICBLURBEHIND, 0x7FD9EEF5))
             {
-                AccentState = AccentState.ACCENT_ENABLE_BLURBEHIND
-            };
+                _ = TryApplyAccent(windowHelper.Handle, AccentState.ACCENT_ENABLE_BLURBEHIND, 0);
+            }
+        }
 
-            var accentStructSize = Marshal.SizeOf(accent);
-
-            var accentPtr = Marshal.AllocHGlobal(accentStructSize);
-            Marshal.StructureToPtr(accent, accentPtr, false);
-
-            var data = new WindowCompositionAttributeData
+        private static bool TryApplyAccent(IntPtr hwnd, AccentState state, int gradientColor)
+        {
+            try
             {
-                Attribute = WindowCompositionAttribute.WCA_ACCENT_POLICY,
-                SizeOfData = accentStructSize,
-                Data = accentPtr
-            };
+                var accent = new AccentPolicy
+                {
+                    AccentState = state,
+                    AccentFlags = 2,
+                    GradientColor = gradientColor,
+                    AnimationId = 0
+                };
 
-            _ = SetWindowCompositionAttribute(windowHelper.Handle, ref data);
+                int accentStructSize = Marshal.SizeOf(accent);
+                IntPtr accentPtr = Marshal.AllocHGlobal(accentStructSize);
+                try
+                {
+                    Marshal.StructureToPtr(accent, accentPtr, false);
+                    var data = new WindowCompositionAttributeData
+                    {
+                        Attribute = WindowCompositionAttribute.WCA_ACCENT_POLICY,
+                        SizeOfData = accentStructSize,
+                        Data = accentPtr
+                    };
 
-            Marshal.FreeHGlobal(accentPtr);
+                    int result = SetWindowCompositionAttribute(hwnd, ref data);
+                    return result != 0;
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(accentPtr);
+                }
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         [DllImport("user32.dll")]
@@ -157,11 +177,12 @@ namespace Palisades.Helpers
     {
         internal enum AccentState
         {
-            ACCENT_DISABLED,
-            ACCENT_ENABLE_GRADIENT,
-            ACCENT_ENABLE_TRANSPARENTGRADIENT,
-            ACCENT_ENABLE_BLURBEHIND,
-            ACCENT_INVALID_STATE,
+            ACCENT_DISABLED = 0,
+            ACCENT_ENABLE_GRADIENT = 1,
+            ACCENT_ENABLE_TRANSPARENTGRADIENT = 2,
+            ACCENT_ENABLE_BLURBEHIND = 3,
+            ACCENT_ENABLE_ACRYLICBLURBEHIND = 4,
+            ACCENT_INVALID_STATE = 5,
         }
 
         [StructLayout(LayoutKind.Sequential)]

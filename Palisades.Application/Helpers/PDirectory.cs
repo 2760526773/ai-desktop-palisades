@@ -25,6 +25,16 @@ namespace Palisades.Helpers
             return Path.Combine(GetPalisadeDirectory(identifier), "icons");
         }
 
+        internal static string GetManagedItemsRootDirectory()
+        {
+            return Path.Combine(GetAppDirectory(), "managed-items");
+        }
+
+        internal static string GetManagedCategoryDirectory(string categoryName)
+        {
+            return Path.Combine(GetManagedItemsRootDirectory(), categoryName);
+        }
+
         internal static void EnsureExists(string directory)
         {
             DirectoryInfo infos = new(directory);

@@ -1,8 +1,8 @@
-﻿
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Windows.Media;
 using System.Xml.Serialization;
+
 namespace Palisades.Model
 {
     [XmlRoot(Namespace = "io.stouder", ElementName = "PalisadeModel")]
@@ -23,13 +23,16 @@ namespace Palisades.Model
         public PalisadeModel()
         {
             identifier = Guid.NewGuid().ToString();
-            name = "No name";
-            headerColor = Color.FromArgb(200, 0, 0, 0);
-            bodyColor = Color.FromArgb(120, 0, 0, 0);
-            titleColor = Color.FromArgb(255, 255, 255, 255);
-            labelsColor = Color.FromArgb(255, 255, 255, 255);
-            width = 800;
-            height = 450;
+            name = "新建栅栏";
+
+            // 默认毛玻璃风格，避免纯黑块遮挡桌面。
+            headerColor = Color.FromArgb(190, 255, 255, 255);
+            bodyColor = Color.FromArgb(96, 230, 240, 255);
+            titleColor = Color.FromArgb(255, 33, 37, 41);
+            labelsColor = Color.FromArgb(255, 33, 37, 41);
+
+            width = 520;
+            height = 340;
             shortcuts = new();
         }
 
@@ -49,6 +52,7 @@ namespace Palisades.Model
 
         [XmlArrayItem(typeof(LnkShortcut))]
         [XmlArrayItem(typeof(UrlShortcut))]
+        [XmlArrayItem(typeof(FileShortcut))]
         public ObservableCollection<Shortcut> Shortcuts { get { return shortcuts; } set { shortcuts = value; } }
     }
 }

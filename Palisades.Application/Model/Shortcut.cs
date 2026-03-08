@@ -9,6 +9,7 @@ namespace Palisades.Model
 {
     [XmlInclude(typeof(LnkShortcut))]
     [XmlInclude(typeof(UrlShortcut))]
+    [XmlInclude(typeof(FileShortcut))]
     public abstract class Shortcut
     {
         private string name;

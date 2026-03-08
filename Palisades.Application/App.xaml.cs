@@ -1,13 +1,27 @@
 ﻿using Palisades.Helpers;
 using Sentry;
+using System.Threading;
+using System.Windows;
 using System.Windows.Threading;
 
 namespace Palisades
 {
     public partial class App : System.Windows.Application
     {
+        private readonly Mutex _singleInstanceMutex;
+        private readonly bool _isPrimaryInstance;
+
         public App()
         {
+            _singleInstanceMutex = new Mutex(true, "Global\\Palisades.SingleInstance", out bool createdNew);
+            _isPrimaryInstance = createdNew;
+
+            if (!_isPrimaryInstance)
+            {
+                MessageBox.Show("Palisades 已在运行。", "Palisades", MessageBoxButton.OK, MessageBoxImage.Information);
+                Shutdown();
+                return;
+            }
 
             SetupSentry();
 
@@ -16,6 +30,16 @@ namespace Palisades
             {
                 PalisadesManager.CreatePalisade();
             }
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            if (_isPrimaryInstance)
+            {
+                _singleInstanceMutex.ReleaseMutex();
+            }
+            _singleInstanceMutex.Dispose();
+            base.OnExit(e);
         }
 
         private void SetupSentry()

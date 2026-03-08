@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows;
@@ -17,14 +18,10 @@ namespace Palisades.ViewModel
 {
     public class PalisadeViewModel : INotifyPropertyChanged
     {
-        #region Attributs
         private readonly PalisadeModel model;
-
         private volatile bool shouldSave;
         private Shortcut? selectedShortcut;
-        #endregion
 
-        #region Accessors
         public string Identifier
         {
             get { return model.Identifier; }
@@ -78,6 +75,7 @@ namespace Palisades.ViewModel
             get => new(model.TitleColor);
             set { model.TitleColor = value.Color; OnPropertyChanged(); Save(); }
         }
+
         public SolidColorBrush LabelsColor
         {
             get => new(model.LabelsColor);
@@ -93,32 +91,25 @@ namespace Palisades.ViewModel
         public Shortcut? SelectedShortcut
         {
             get => selectedShortcut;
-            set { selectedShortcut = value; OnPropertyChanged(); Save(); }
+            set { selectedShortcut = value; OnPropertyChanged(); }
         }
-        #endregion
 
         public PalisadeViewModel() : this(new PalisadeModel()) { }
 
         public PalisadeViewModel(PalisadeModel model)
         {
             this.model = model;
-
             OnPropertyChanged();
-            Shortcuts.CollectionChanged += (object? sender, NotifyCollectionChangedEventArgs e) =>
-            {
-                Save();
-            };
+            Shortcuts.CollectionChanged += (_, __) => Save();
 
             Thread saveThread = new(SaveAsync);
             saveThread.Start();
         }
 
-        #region Methods
         public void Save()
         {
             shouldSave = true;
         }
-
 
         public void Delete()
         {
@@ -126,9 +117,6 @@ namespace Palisades.ViewModel
             Directory.Delete(Path.Combine(saveDirectory), true);
         }
 
-        #endregion
-
-        #region Commands
         public ICommand NewPalisadeCommand { get; private set; } = new RelayCommand(() =>
         {
             PalisadesManager.CreatePalisade();
@@ -166,7 +154,6 @@ namespace Palisades.ViewModel
 
         public void DropShortcutsHandler(DragEventArgs dragEventArgs)
         {
-
             dragEventArgs.Handled = true;
             if (!dragEventArgs.Data.GetDataPresent(DataFormats.FileDrop))
             {
@@ -174,33 +161,21 @@ namespace Palisades.ViewModel
                 return;
             }
 
-            string[] shortcuts = (string[])dragEventArgs.Data.GetData(DataFormats.FileDrop);
-            foreach (string shortcut in shortcuts)
+            string[] paths = (string[])dragEventArgs.Data.GetData(DataFormats.FileDrop);
+            foreach (string path in paths.Where(p => !string.IsNullOrWhiteSpace(p)))
             {
-                string? extension = Path.GetExtension(shortcut);
-
-                if (extension == null)
+                Shortcut? shortcutItem = PalisadesManager.MovePathIntoFenceAndBuildShortcut(path, this);
+                if (shortcutItem == null)
                 {
                     continue;
                 }
 
-                if (extension == ".lnk")
-                {
-                    Shortcut? shortcutItem = LnkShortcut.BuildFrom(shortcut, Identifier);
-                    if (shortcutItem != null)
-                    {
-                        Shortcuts.Add(shortcutItem);
-                    }
-                }
-                if (extension == ".url")
-                {
-                    Shortcut? shortcutItem = UrlShortcut.BuildFrom(shortcut, Identifier);
-                    if (shortcutItem != null)
-                    {
-                        Shortcuts.Add(shortcutItem);
-                    }
-                }
+                Shortcuts.Add(shortcutItem);
             }
+
+            SelectedShortcut = null;
+            Save();
+            PalisadesManager.RemoveMissingShortcutsFromAllFences();
         }
 
         public ICommand ClickShortcut
@@ -231,7 +206,7 @@ namespace Palisades.ViewModel
 
         public void DeleteShortcut()
         {
-            if(SelectedShortcut == null)
+            if (SelectedShortcut == null)
             {
                 return;
             }
@@ -240,9 +215,6 @@ namespace Palisades.ViewModel
             SelectedShortcut = null;
         }
 
-        /// <summary>
-        /// Save asynchronously every 1s if needed.
-        /// </summary>
         private void SaveAsync()
         {
             while (true)
@@ -252,16 +224,16 @@ namespace Palisades.ViewModel
                     string saveDirectory = PDirectory.GetPalisadeDirectory(Identifier);
                     PDirectory.EnsureExists(saveDirectory);
                     using StreamWriter writer = new(Path.Combine(saveDirectory, "state.xml"));
-                    XmlSerializer serializer = new(typeof(PalisadeModel), new Type[] { typeof(Shortcut), typeof(LnkShortcut), typeof(UrlShortcut) });
+                    XmlSerializer serializer = new(typeof(PalisadeModel), new Type[] { typeof(Shortcut), typeof(LnkShortcut), typeof(UrlShortcut), typeof(FileShortcut) });
                     serializer.Serialize(writer, this.model);
                     shouldSave = false;
                 }
                 Thread.Sleep(1000);
             }
         }
-        #endregion
 
         public event PropertyChangedEventHandler? PropertyChanged;
+
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));

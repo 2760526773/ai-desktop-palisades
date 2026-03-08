@@ -8,98 +8,182 @@
         xmlns:helpers="clr-namespace:Palisades.Helpers"
         xmlns:viewModel="clr-namespace:Palisades.ViewModel"
         xmlns:converters="clr-namespace:Palisades.Converters"
-        xmlns:dd="clr-namespace:GongSolutions.Wpf.DragDrop;assembly=GongSolutions.Wpf.DragDrop"
-        helpers:WindowBlur.IsEnabled="True"
+        helpers:WindowBlur.IsEnabled="False"
         helpers:WindowSinker.AlwaysOnBottom="True"
         ShowInTaskbar="False"
         mc:Ignorable="d"
-        Title="Palisade"
+        Title="桌面栅栏"
         Width="{Binding Width, Mode=TwoWay}"
         Height="{Binding Height, Mode=TwoWay}"
+        MinWidth="260"
+        MinHeight="32"
         AllowsTransparency="True"
         WindowStyle="None"
         ResizeMode="CanResize"
         Background="Transparent"
         Left="{Binding FenceX, Mode=TwoWay}"
         Top="{Binding FenceY, Mode=TwoWay}"
-        UseLayoutRounding="True"
-        >
+        UseLayoutRounding="True">
     <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="0" ResizeBorderThickness="5" CornerRadius="20" GlassFrameThickness="0" NonClientFrameEdges="None" UseAeroCaptionButtons="False" />
+        <WindowChrome CaptionHeight="0" ResizeBorderThickness="4" CornerRadius="2" GlassFrameThickness="0" NonClientFrameEdges="None" UseAeroCaptionButtons="False" />
     </WindowChrome.WindowChrome>
+
     <Window.DataContext>
         <viewModel:PalisadeViewModel />
     </Window.DataContext>
+
     <Window.Resources>
         <converters:PathToImageConverter x:Key="PathToImage" />
         <converters:MultiValueEqualityConverter x:Key="MultiValueEqualityConverter" />
         <helpers:BindingProxy x:Key="proxy" Data="{Binding}" />
+
+        <Style x:Key="HeaderButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="22" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="Foreground" Value="#F7FCFF" />
+            <Setter Property="Background" Value="#14000000" />
+            <Setter Property="BorderBrush" Value="#22FFFFFF" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="2,0,2,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="11">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#28FFFFFF" />
+                    <Setter Property="BorderBrush" Value="#55FFFFFF" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
+
     <i:Interaction.Triggers>
-        <i:EventTrigger EventName="KeyDown" >
+        <i:EventTrigger EventName="KeyDown">
             <i:InvokeCommandAction Command="{Binding DelKeyPressed}" CommandParameter="{Binding}" />
         </i:EventTrigger>
     </i:Interaction.Triggers>
-    <Border x:Name="LayoutRoot" CornerRadius="20">
-        <DockPanel>
-            <Grid DockPanel.Dock="Top" x:Name="Header" MouseLeftButtonDown="Header_MouseLeftButtonDown" IsHitTestVisible="True" Background="#00000000" Tag="{Binding DataContext, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Window}}">
+
+    <Border x:Name="LayoutRoot" BorderThickness="1" BorderBrush="#74CFE5FF" SnapsToDevicePixels="True">
+        <Border.Background>
+            <SolidColorBrush Color="#304B82D6" />
+        </Border.Background>
+
+        <DockPanel LastChildFill="True">
+            <Grid DockPanel.Dock="Top"
+                  x:Name="Header"
+                  Height="30"
+                  MouseLeftButtonDown="Header_MouseLeftButtonDown"
+                  IsHitTestVisible="True"
+                  Background="#00000000"
+                  Tag="{Binding DataContext, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Window}}">
                 <Grid.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Edit" Command="{Binding Path=Data.EditPalisadeCommand, Source={StaticResource proxy}}" CommandParameter="{Binding}" />
-                        <MenuItem Header="Delete" Command="{Binding Path=Data.DeletePalisadeCommand, Source={StaticResource proxy}}" CommandParameter="{Binding Identifier}" />
+                        <MenuItem Header="编辑栅栏" Command="{Binding Path=Data.EditPalisadeCommand, Source={StaticResource proxy}}" CommandParameter="{Binding}" />
+                        <MenuItem Header="删除栅栏" Command="{Binding Path=Data.DeletePalisadeCommand, Source={StaticResource proxy}}" CommandParameter="{Binding Identifier}" />
                         <Separator />
-                        <MenuItem Header="New fence" Command="{Binding Path=Data.NewPalisadeCommand, Source={StaticResource proxy}}" />
+                        <MenuItem Header="新建栅栏" Command="{Binding Path=Data.NewPalisadeCommand, Source={StaticResource proxy}}" />
                         <Separator />
-                        <MenuItem Header="About" Command="{Binding Path=Data.OpenAboutCommand, Source={StaticResource proxy}}" CommandParameter="{Binding}" />
+                        <MenuItem Header="关于" Command="{Binding Path=Data.OpenAboutCommand, Source={StaticResource proxy}}" CommandParameter="{Binding}" />
+                        <MenuItem Header="AI 设置" Click="OpenAiSettings_Click" />
+                        <MenuItem Header="立即AI分类" Click="RunAiClassifyNow_Click" />
+                        <Separator />
+                        <MenuItem Header="重启" Click="RestartApplication_Click" />
+                        <MenuItem Header="退出" Click="ExitApplication_Click" />
                     </ContextMenu>
                 </Grid.ContextMenu>
+
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="80"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="80"/>
+                    <ColumnDefinition Width="70" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="70" />
                 </Grid.ColumnDefinitions>
-                <Rectangle Grid.ColumnSpan="3">
-                    <Rectangle.Fill>
-                        <SolidColorBrush Color="{Binding HeaderColor}" />
-                    </Rectangle.Fill>
-                </Rectangle>
-                <Label Grid.Column="1"  Content="{Binding Name, Mode=OneWay}" Margin="5" FontSize="32" Foreground="{Binding TitleColor}"  HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="4,0,0,0">
+                    <Button x:Name="CollapseButton" Style="{StaticResource HeaderButtonStyle}" Content="^" ToolTip="展开/收起" Click="ToggleCollapse_Click" />
+                </StackPanel>
+
+                <TextBlock Grid.Column="1"
+                           Text="{Binding Name}"
+                           Foreground="#F7FCFF"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,4,0">
+                    <Button x:Name="LockButton" Style="{StaticResource HeaderButtonStyle}" Content="🔓" ToolTip="锁定/解锁" Click="ToggleLock_Click" />
+                    <Button x:Name="MenuButton" Style="{StaticResource HeaderButtonStyle}" Content="☰" ToolTip="菜单" Click="OpenMenu_Click" />
+                </StackPanel>
             </Grid>
-            <Grid x:Name="drag" AllowDrop="True">
+
+            <Grid x:Name="drag" AllowDrop="True" Margin="0" Background="#00000000">
                 <i:Interaction.Triggers>
                     <i:EventTrigger EventName="Drop">
                         <i:InvokeCommandAction Command="{Binding DropShortcut}" PassEventArgsToCommand="True" />
                     </i:EventTrigger>
                 </i:Interaction.Triggers>
-                <Rectangle>
-                    <Rectangle.Fill>
-                        <SolidColorBrush Color="{Binding BodyColor}" />
-                    </Rectangle.Fill>
-                </Rectangle>
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <ItemsControl ItemsSource="{Binding Shortcuts}" Margin="20, 20, 20, 20" dd:DragDrop.IsDragSource="True" dd:DragDrop.IsDropTarget="True">
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="6,2,6,4">
+                    <ItemsControl ItemsSource="{Binding Shortcuts}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <WrapPanel />
+                                <WrapPanel ItemWidth="72" ItemHeight="76" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
+
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <ContentControl>
+                                <ContentControl Tag="{Binding}"
+                                                PreviewMouseLeftButtonDown="Shortcut_PreviewMouseLeftButtonDown"
+                                                PreviewMouseMove="Shortcut_PreviewMouseMove"
+                                                PreviewMouseRightButtonDown="Shortcut_PreviewMouseRightButtonDown"
+                                                MouseRightButtonUp="Shortcut_MouseRightButtonUp">
+                                    <ContentControl.ToolTip>
+                                        <ToolTip Placement="Mouse" Background="#D8202020" Foreground="White" BorderBrush="#66FFFFFF" BorderThickness="1" Padding="8,6" HasDropShadow="False">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding UriOrFileAction}" TextWrapping="Wrap" MaxWidth="320" Margin="0,4,0,0" />
+                                            </StackPanel>
+                                        </ToolTip>
+                                    </ContentControl.ToolTip>
+                                    <ContentControl.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Header="打开" Click="OpenShortcut_Click" CommandParameter="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            <MenuItem Header="打开所在位置" Click="OpenShortcutLocation_Click" CommandParameter="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            <MenuItem Header="移回桌面" Click="MoveShortcutToDesktop_Click" CommandParameter="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            <Separator />
+                                            <MenuItem Header="删除" Click="DeleteShortcut_Click" CommandParameter="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                            <MenuItem Header="属性" Click="OpenShortcutProperties_Click" CommandParameter="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                        </ContextMenu>
+                                    </ContentControl.ContextMenu>
+
                                     <i:Interaction.Triggers>
-                                        <i:EventTrigger EventName="MouseDoubleClick" >
+                                        <i:EventTrigger EventName="MouseDoubleClick">
                                             <i:LaunchUriOrFileAction Path="{Binding UriOrFileAction}" />
                                         </i:EventTrigger>
-                                        <i:EventTrigger EventName="MouseDown" >
+                                        <i:EventTrigger EventName="MouseDown">
                                             <i:InvokeCommandAction Command="{Binding Path=Data.ClickShortcut, Source={StaticResource proxy}}" CommandParameter="{Binding}" />
                                         </i:EventTrigger>
                                     </i:Interaction.Triggers>
-                                    <Border Margin="0,0,0,10" CornerRadius="4" Width="100">
+
+                                    <Border Width="68" Height="72" Background="#00000000" Margin="2,1">
                                         <Border.Style>
-                                            <Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#00000000" />
                                                 <Style.Triggers>
-                                                    <Trigger Property="Border.IsMouseOver" Value="True" >
-                                                        <Setter Property="Border.Background" Value="#20FFFFFF" />
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#1AFFFFFF" />
                                                     </Trigger>
                                                     <DataTrigger Value="True">
                                                         <DataTrigger.Binding>
@@ -108,19 +192,25 @@
                                                                 <Binding Path="Data.SelectedShortcut" Source="{StaticResource proxy}" Mode="OneWay" />
                                                             </MultiBinding>
                                                         </DataTrigger.Binding>
-                                                        <Setter Property="Border.Background" Value="#20FFFFFF" />
+                                                        <Setter Property="Background" Value="#24FFFFFF" />
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Border.Style>
-                                        <StackPanel VerticalAlignment="Top" HorizontalAlignment="Center" Cursor="Hand">
-                                            <Image
-                                                Source="{Binding IconPath, Converter={StaticResource PathToImage}}"
-                                                Width="48"
-                                                Height="48"
-                                                Stretch="UniformToFill" Margin="5,5,5,5"
-                                            />
-                                            <TextBlock TextWrapping="NoWrap" TextAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding Name}" Foreground="{Binding DataContext.LabelsColor, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" HorizontalAlignment="Center" Margin="5,0,5,5" />
+
+                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Cursor="Hand">
+                                            <Image Source="{Binding IconPath, Converter={StaticResource PathToImage}}"
+                                                   Width="32"
+                                                   Height="32"
+                                                   Stretch="UniformToFill"
+                                                   Margin="0,2,0,3" />
+                                            <TextBlock Text="{Binding Name}"
+                                                       Foreground="#FFFFFF"
+                                                       FontSize="10"
+                                                       TextAlignment="Center"
+                                                       TextWrapping="Wrap"
+                                                       MaxHeight="30"
+                                                       TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
                                     </Border>
                                 </ContentControl>

@@ -8,7 +8,7 @@
         xmlns:viewModel="clr-namespace:Palisades.ViewModel"
         xmlns:converters="clr-namespace:Palisades.Converters"
         mc:Ignorable="d"
-        Title="Edit Palisade"
+        Title="编辑栅栏"
         Width="400"
         SizeToContent="Height"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
@@ -32,7 +32,7 @@
                         <Setter Property="HorizontalAlignment" Value="Left" />
                         <Setter Property="Margin" Value="0,5,0,5" />
                     </Style>
-                    
+
                     <Style TargetType="colorpicker:PortableColorPicker">
                         <Setter Property="FontSize" Value="18" />
                     </Style>
@@ -62,19 +62,19 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Label Grid.Row="0" Style="{StaticResource MaterialDesignLabel}" FontSize="24">Name</Label>
+        <Label Grid.Row="0" Style="{StaticResource MaterialDesignLabel}" FontSize="24">名称</Label>
         <TextBox Style="{StaticResource MaterialDesignTextBox}" FontSize="24" Grid.Column="2" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"  />
 
-        <Label Grid.Row="2" Style="{StaticResource MaterialDesignLabel}" FontSize="24">Header Color</Label>
+        <Label Grid.Row="2" Style="{StaticResource MaterialDesignLabel}" FontSize="24">标题背景色</Label>
         <colorpicker:PortableColorPicker Grid.Row="2" Grid.Column="2" SelectedColor="{Binding HeaderColor, Mode=TwoWay}" Width="80" HorizontalAlignment="Center" Style="{StaticResource DefaultColorPickerStyle}" />
 
-        <Label Grid.Row="4" Style="{StaticResource MaterialDesignLabel}" FontSize="24">Body Color</Label>
+        <Label Grid.Row="4" Style="{StaticResource MaterialDesignLabel}" FontSize="24">主体背景色</Label>
         <colorpicker:PortableColorPicker Grid.Row="4" Grid.Column="2" SelectedColor="{Binding BodyColor, Mode=TwoWay}" Width="80" HorizontalAlignment="Center" Style="{StaticResource DefaultColorPickerStyle}" />
 
-        <Label Grid.Row="6" Style="{StaticResource MaterialDesignLabel}" FontSize="24">Title Color</Label>
+        <Label Grid.Row="6" Style="{StaticResource MaterialDesignLabel}" FontSize="24">标题文字色</Label>
         <colorpicker:PortableColorPicker Grid.Row="6" Grid.Column="2" SelectedColor="{Binding TitleColor, Converter={StaticResource brushConverter}, Mode=TwoWay}" Width="80" HorizontalAlignment="Center" Style="{StaticResource DefaultColorPickerStyle}" />
 
-        <Label Grid.Row="8" Style="{StaticResource MaterialDesignLabel}" FontSize="24">Labels Color</Label>
+        <Label Grid.Row="8" Style="{StaticResource MaterialDesignLabel}" FontSize="24">图标文字色</Label>
         <colorpicker:PortableColorPicker Grid.Row="8" Grid.Column="2" SelectedColor="{Binding LabelsColor, Converter={StaticResource brushConverter}, Mode=TwoWay}" Width="80" HorizontalAlignment="Center" Style="{StaticResource DefaultColorPickerStyle}" />
 
     </Grid>
