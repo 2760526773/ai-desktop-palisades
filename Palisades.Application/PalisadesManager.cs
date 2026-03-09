@@ -860,9 +860,72 @@ namespace Palisades
         {
             palisades.TryGetValue(identifier, out Palisade? palisade);
             if (palisade == null) return;
-            if (palisade.DataContext is PalisadeViewModel vm) vm.Delete();
+
+            if (palisade.DataContext is PalisadeViewModel vm)
+            {
+                UnarchiveFenceToDesktop(vm);
+                vm.Delete();
+            }
+
             palisade.Close();
             palisades.Remove(identifier);
+        }
+
+        public static int UnarchiveFenceToDesktop(PalisadeViewModel fence)
+        {
+            return RestoreFenceItemsToDesktop(fence);
+        }
+
+        private static int RestoreFenceItemsToDesktop(PalisadeViewModel fence)
+        {
+            string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+            PDirectory.EnsureExists(desktop);
+
+            int restored = 0;
+            HashSet<string> processed = new(StringComparer.OrdinalIgnoreCase);
+            foreach (Shortcut shortcut in fence.Shortcuts.ToList())
+            {
+                string action = shortcut.UriOrFileAction;
+                if (string.IsNullOrWhiteSpace(action) || !processed.Add(NormalizePath(action)))
+                {
+                    continue;
+                }
+
+                if (!IsManagedPath(action) || (!File.Exists(action) && !Directory.Exists(action)))
+                {
+                    continue;
+                }
+
+                string movedPath = MovePathToDirectory(action, desktop);
+                RemoveShortcutFromAllFences(action);
+                RemoveShortcutFromAllFences(movedPath);
+                restored++;
+            }
+
+            string categoryDir = PDirectory.GetManagedCategoryDirectory(fence.Name);
+            if (Directory.Exists(categoryDir))
+            {
+                foreach (string dir in Directory.GetDirectories(categoryDir, "*", SearchOption.TopDirectoryOnly))
+                {
+                    string movedPath = MovePathToDirectory(dir, desktop);
+                    RemoveShortcutFromAllFences(dir);
+                    RemoveShortcutFromAllFences(movedPath);
+                    restored++;
+                }
+
+                foreach (string file in Directory.GetFiles(categoryDir, "*", SearchOption.TopDirectoryOnly))
+                {
+                    string movedPath = MovePathToDirectory(file, desktop);
+                    RemoveShortcutFromAllFences(file);
+                    RemoveShortcutFromAllFences(movedPath);
+                    restored++;
+                }
+
+                TryDeleteEmptyDirectory(categoryDir);
+            }
+
+            RemoveMissingShortcutsFromAllFences();
+            return restored;
         }
 
         public static Palisade GetPalisade(string identifier)

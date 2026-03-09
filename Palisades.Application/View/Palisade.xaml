@@ -89,18 +89,19 @@
                   Tag="{Binding DataContext, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=Window}}">
                 <Grid.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="编辑栅栏" Command="{Binding Path=Data.EditPalisadeCommand, Source={StaticResource proxy}}" CommandParameter="{Binding}" />
-                        <MenuItem Header="删除栅栏" Command="{Binding Path=Data.DeletePalisadeCommand, Source={StaticResource proxy}}" CommandParameter="{Binding Identifier}" />
+                        <MenuItem Header="&#x7F16;&#x8F91;&#x6805;&#x680F;" Command="{Binding Path=Data.EditPalisadeCommand, Source={StaticResource proxy}}" CommandParameter="{Binding}" />
+                        <MenuItem Header="&#x5220;&#x9664;&#x6805;&#x680F;" Command="{Binding Path=Data.DeletePalisadeCommand, Source={StaticResource proxy}}" CommandParameter="{Binding Identifier}" />
+                        <MenuItem Header="&#x53D6;&#x6D88;&#x5206;&#x7C7B;&#x5E76;&#x79FB;&#x56DE;&#x684C;&#x9762;" Click="UnarchiveFenceToDesktop_Click" />
                         <Separator />
-                        <MenuItem Header="新建栅栏" Command="{Binding Path=Data.NewPalisadeCommand, Source={StaticResource proxy}}" />
+                        <MenuItem Header="&#x65B0;&#x5EFA;&#x6805;&#x680F;" Command="{Binding Path=Data.NewPalisadeCommand, Source={StaticResource proxy}}" />
                         <Separator />
-                        <MenuItem Header="关于" Command="{Binding Path=Data.OpenAboutCommand, Source={StaticResource proxy}}" CommandParameter="{Binding}" />
-                        <MenuItem Header="AI 设置" Click="OpenAiSettings_Click" />
-                        <MenuItem Header="立即AI分类" Click="RunAiClassifyNow_Click" />
-                        <MenuItem x:Name="AutoStartMenuItem" Header="开机自启动" IsCheckable="True" Click="ToggleAutoStart_Click" />
+                        <MenuItem Header="&#x5173;&#x4E8E;" Command="{Binding Path=Data.OpenAboutCommand, Source={StaticResource proxy}}" CommandParameter="{Binding}" />
+                        <MenuItem Header="AI &#x8BBE;&#x7F6E;" Click="OpenAiSettings_Click" />
+                        <MenuItem Header="&#x7ACB;&#x5373;AI&#x5206;&#x7C7B;" Click="RunAiClassifyNow_Click" />
+                        <MenuItem x:Name="AutoStartMenuItem" Header="&#x5F00;&#x673A;&#x81EA;&#x542F;&#x52A8;" IsCheckable="True" Click="ToggleAutoStart_Click" />
                         <Separator />
-                        <MenuItem Header="重启" Click="RestartApplication_Click" />
-                        <MenuItem Header="退出" Click="ExitApplication_Click" />
+                        <MenuItem Header="&#x91CD;&#x542F;" Click="RestartApplication_Click" />
+                        <MenuItem Header="&#x9000;&#x51FA;" Click="ExitApplication_Click" />
                     </ContextMenu>
                 </Grid.ContextMenu>
 

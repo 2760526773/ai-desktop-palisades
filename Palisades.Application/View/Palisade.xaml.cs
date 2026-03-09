@@ -114,6 +114,30 @@ namespace Palisades.View
             Application.Current.Shutdown();
         }
 
+        private void UnarchiveFenceToDesktop_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBoxResult confirm = MessageBox.Show(
+                $"确定要取消栅栏“{viewModel.Name}”中的分类，并将其中的受管项目移回桌面吗？",
+                "确认取消分类",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (confirm != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            try
+            {
+                int restored = PalisadesManager.UnarchiveFenceToDesktop(viewModel);
+                MessageBox.Show(restored > 0 ? $"已取消分类并移回桌面 {restored} 项。" : "当前栅栏没有可移回桌面的受管项目。", "栅栏", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"取消分类失败：{ex.Message}", "栅栏", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
         private void ToggleAutoStart_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -137,7 +161,7 @@ namespace Palisades.View
             {
                 bool enabled = AutoStartHelper.IsEnabled();
                 AutoStartMenuItem.IsChecked = enabled;
-                AutoStartMenuItem.Header = enabled ? "??????????" : "??????????";
+                AutoStartMenuItem.Header = enabled ? "开机自启动（已开启）" : "开机自启动（已关闭）";
             }
         }
 
