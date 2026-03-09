@@ -1,10 +1,10 @@
 ﻿using Microsoft.VisualBasic.FileIO;
+using Palisades.Helpers;
 using Palisades.Model;
 using Palisades.ViewModel;
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -33,6 +33,7 @@ namespace Palisades.View
             expandedHeight = Math.Max(Height, ExpandedMinHeight);
             ApplyLockState(false);
             ApplyCollapsedState(false);
+            RefreshAutoStartMenuState();
 
             Show();
         }
@@ -72,6 +73,7 @@ namespace Palisades.View
 
         private void OpenMenu_Click(object sender, RoutedEventArgs e)
         {
+            RefreshAutoStartMenuState();
             if (Header.ContextMenu != null)
             {
                 Header.ContextMenu.PlacementTarget = MenuButton;
@@ -85,7 +87,7 @@ namespace Palisades.View
         {
             try
             {
-                string exePath = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName ?? Assembly.GetExecutingAssembly().Location;
+                string exePath = AppLaunchHelper.GetPreferredExecutablePath();
                 if (string.IsNullOrWhiteSpace(exePath) || !File.Exists(exePath))
                 {
                     throw new InvalidOperationException("未找到可执行文件路径。");
@@ -97,6 +99,7 @@ namespace Palisades.View
                     WorkingDirectory = Path.GetDirectoryName(exePath) ?? Environment.CurrentDirectory
                 });
 
+                App.SuppressDesktopRestoreOnExit = true;
                 Application.Current.Shutdown();
             }
             catch (Exception ex)
@@ -107,7 +110,35 @@ namespace Palisades.View
 
         private void ExitApplication_Click(object sender, RoutedEventArgs e)
         {
+            App.SuppressDesktopRestoreOnExit = false;
             Application.Current.Shutdown();
+        }
+
+        private void ToggleAutoStart_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sender is MenuItem menuItem)
+                {
+                    AutoStartHelper.SetEnabled(menuItem.IsChecked);
+                    RefreshAutoStartMenuState();
+                }
+            }
+            catch (Exception ex)
+            {
+                RefreshAutoStartMenuState();
+                MessageBox.Show($"设置开机自启动失败：{ex.Message}", "栅栏", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void RefreshAutoStartMenuState()
+        {
+            if (AutoStartMenuItem != null)
+            {
+                bool enabled = AutoStartHelper.IsEnabled();
+                AutoStartMenuItem.IsChecked = enabled;
+                AutoStartMenuItem.Header = enabled ? "??????????" : "??????????";
+            }
         }
 
         private void ApplyCollapsedState(bool collapsed)
@@ -384,3 +415,4 @@ namespace Palisades.View
         }
     }
 }
+

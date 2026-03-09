@@ -260,6 +260,34 @@ namespace Palisades
             return shortcut;
         }
 
+        public static int RepairManagedStateAfterUnexpectedShutdown()
+        {
+            string managedRoot = PDirectory.GetManagedItemsRootDirectory();
+            if (!Directory.Exists(managedRoot))
+            {
+                return 0;
+            }
+
+            int repaired = 0;
+            RemoveMissingShortcutsFromAllFences();
+
+            foreach (string categoryDir in Directory.GetDirectories(managedRoot, "*", SearchOption.TopDirectoryOnly))
+            {
+                string categoryName = NormalizeCategory(Path.GetFileName(categoryDir));
+                PalisadeViewModel fence = EnsureFenceByName(categoryName);
+
+                foreach (string path in Directory.GetDirectories(categoryDir, "*", SearchOption.TopDirectoryOnly)
+                    .Concat(Directory.GetFiles(categoryDir, "*", SearchOption.TopDirectoryOnly)))
+                {
+                    repaired += EnsureManagedItemAttachedToFence(path, fence);
+                }
+
+                DeduplicateShortcutsInFence(fence);
+                fence.Save();
+            }
+
+            return repaired;
+        }
         public static bool TryMoveShortcutToDesktop(Shortcut shortcut, out string movedPath, out string message)
         {
             movedPath = string.Empty;
@@ -295,6 +323,58 @@ namespace Palisades
             }
         }
 
+        private static int EnsureManagedItemAttachedToFence(string path, PalisadeViewModel targetFence)
+        {
+            if (!File.Exists(path) && !Directory.Exists(path))
+            {
+                return 0;
+            }
+
+            string normalized = NormalizePath(path);
+            int changed = 0;
+            bool existsInTarget = false;
+
+            foreach (Palisade p in palisades.Values)
+            {
+                if (p.DataContext is not PalisadeViewModel vm)
+                {
+                    continue;
+                }
+
+                var matches = vm.Shortcuts
+                    .Where(s => string.Equals(NormalizePath(s.UriOrFileAction), normalized, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (vm.Identifier == targetFence.Identifier)
+                {
+                    existsInTarget = matches.Count > 0;
+                    continue;
+                }
+
+                foreach (Shortcut match in matches)
+                {
+                    vm.Shortcuts.Remove(match);
+                    changed++;
+                }
+
+                if (matches.Count > 0)
+                {
+                    vm.Save();
+                }
+            }
+
+            if (!existsInTarget)
+            {
+                Shortcut? shortcut = BuildShortcut(normalized, targetFence.Identifier);
+                if (shortcut != null)
+                {
+                    targetFence.Shortcuts.Add(shortcut);
+                    changed++;
+                }
+            }
+
+            return changed;
+        }
         public static bool IsManagedPath(string path)
         {
             if (string.IsNullOrWhiteSpace(path))
@@ -793,3 +873,4 @@ namespace Palisades
         }
     }
 }
+

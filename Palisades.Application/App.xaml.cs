@@ -11,6 +11,9 @@ namespace Palisades
     {
         private readonly Mutex _singleInstanceMutex;
         private readonly bool _isPrimaryInstance;
+        private bool _isSystemSessionEnding;
+
+        internal static bool SuppressDesktopRestoreOnExit { get; set; }
 
         public App()
         {
@@ -24,9 +27,24 @@ namespace Palisades
                 return;
             }
 
+            SessionEnding += App_SessionEnding;
             SetupSentry();
 
+            SessionState previousState = SessionStateHelper.Load();
+            SessionStateHelper.MarkSessionStarted();
+
             PalisadesManager.LoadPalisades();
+            PalisadesManager.RemoveMissingShortcutsFromAllFences();
+
+            if (!previousState.LastExitClean)
+            {
+                int repaired = PalisadesManager.RepairManagedStateAfterUnexpectedShutdown();
+                if (repaired > 0)
+                {
+                    MessageBox.Show($"检测到上次未正常退出，已自动修复 {repaired} 个受管项目引用。", "Palisades", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+
             if (PalisadesManager.palisades.Count == 0)
             {
                 PalisadesManager.CreatePalisade();
@@ -35,17 +53,32 @@ namespace Palisades
 
         protected override void OnExit(ExitEventArgs e)
         {
+            bool shouldRestore = !_isSystemSessionEnding && !SuppressDesktopRestoreOnExit;
             try
             {
-                int restored = PalisadesManager.RestoreManagedItemsToDesktop();
-                if (restored > 0)
+                if (shouldRestore)
                 {
-                    PalisadesManager.RemoveMissingShortcutsFromAllFences();
+                    int restored = PalisadesManager.RestoreManagedItemsToDesktop();
+                    if (restored > 0)
+                    {
+                        PalisadesManager.RemoveMissingShortcutsFromAllFences();
+                    }
                 }
             }
             catch (Exception ex)
             {
                 SentrySdk.CaptureException(ex);
+            }
+            finally
+            {
+                try
+                {
+                    SessionStateHelper.MarkSessionExited(shouldRestore);
+                }
+                catch (Exception ex)
+                {
+                    SentrySdk.CaptureException(ex);
+                }
             }
 
             if (_isPrimaryInstance)
@@ -54,6 +87,12 @@ namespace Palisades
             }
             _singleInstanceMutex.Dispose();
             base.OnExit(e);
+        }
+
+        private void App_SessionEnding(object? sender, SessionEndingCancelEventArgs e)
+        {
+            _isSystemSessionEnding = true;
+            SuppressDesktopRestoreOnExit = true;
         }
 
         private void SetupSentry()

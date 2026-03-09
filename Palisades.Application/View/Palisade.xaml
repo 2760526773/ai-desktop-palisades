@@ -97,6 +97,7 @@
                         <MenuItem Header="关于" Command="{Binding Path=Data.OpenAboutCommand, Source={StaticResource proxy}}" CommandParameter="{Binding}" />
                         <MenuItem Header="AI 设置" Click="OpenAiSettings_Click" />
                         <MenuItem Header="立即AI分类" Click="RunAiClassifyNow_Click" />
+                        <MenuItem x:Name="AutoStartMenuItem" Header="开机自启动" IsCheckable="True" Click="ToggleAutoStart_Click" />
                         <Separator />
                         <MenuItem Header="重启" Click="RestartApplication_Click" />
                         <MenuItem Header="退出" Click="ExitApplication_Click" />
@@ -222,3 +223,4 @@
         </DockPanel>
     </Border>
 </Window>
+

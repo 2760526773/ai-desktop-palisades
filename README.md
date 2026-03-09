@@ -14,6 +14,11 @@
   <a href="https://www.stardock.com/products/fences/">Reference: Fences</a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/2760526773/ai-desktop-palisades/releases/tag/v0.3.2">Download v0.3.2</a> ·
+  <a href="https://github.com/2760526773/ai-desktop-palisades/releases/download/v0.3.1/AI-Desktop-Palisades-v0.3.2-win-x64.zip">Direct ZIP</a>
+</p>
+
 ---
 
 ## 中文简介
@@ -244,3 +249,5 @@ Please refer to the upstream project license:
 请参考上游项目许可证：
 
 - [Palisades License](https://github.com/Xstoudi/Palisades/blob/main/LICENSE)
+
+

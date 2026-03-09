@@ -102,7 +102,11 @@ namespace Palisades.ViewModel
             OnPropertyChanged();
             Shortcuts.CollectionChanged += (_, __) => Save();
 
-            Thread saveThread = new(SaveAsync);
+            Thread saveThread = new(SaveAsync)
+            {
+                IsBackground = true,
+                Name = "PalisadeSaveThread"
+            };
             saveThread.Start();
         }
 
