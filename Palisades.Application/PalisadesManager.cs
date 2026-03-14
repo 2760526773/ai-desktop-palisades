@@ -28,6 +28,7 @@ namespace Palisades
     internal sealed class AiClassifyCache
     {
         public string Fingerprint { get; set; } = string.Empty;
+        public int ManagedCount { get; set; }
         public DateTime UpdatedAtUtc { get; set; }
     }
 
@@ -47,6 +48,7 @@ namespace Palisades
         private static readonly HashSet<string> AllowedCategories = new(new[] { "游戏", "影音", "娱乐", "文档", "开发", "社交", "工具", "系统", "其他" }, StringComparer.OrdinalIgnoreCase);
         private static readonly SemaphoreSlim OrganizeLock = new(1, 1);
         private const string ClassifierVersion = "2026-03-08-physical-archive-v2";
+        private const string CacheVersion = "2026-03-14-cache-v2";
 
         public static void LoadPalisades()
         {
@@ -111,8 +113,14 @@ namespace Palisades
                 }
 
                 string fingerprint = ComputeFingerprint(candidates, settings);
+                int managedCount = GetManagedCategoryCount();
                 AiClassifyCache cache = LoadClassifyCache();
-                if (!string.IsNullOrWhiteSpace(cache.Fingerprint) && string.Equals(cache.Fingerprint, fingerprint, StringComparison.Ordinal))
+                bool cacheHit = !string.IsNullOrWhiteSpace(cache.Fingerprint)
+                    && string.Equals(cache.Fingerprint, fingerprint, StringComparison.Ordinal)
+                    && cache.ManagedCount > 0
+                    && cache.ManagedCount == managedCount;
+
+                if (cacheHit)
                 {
                     return new AutoOrganizePlan
                     {
@@ -196,12 +204,29 @@ namespace Palisades
             SaveClassifyCache(new AiClassifyCache
             {
                 Fingerprint = plan.Fingerprint,
+                ManagedCount = CountManagedShortcuts(),
                 UpdatedAtUtc = DateTime.UtcNow,
             });
 
             result.AddedShortcutCount = added;
             result.StatusMessage = $"{plan.StatusMessage}\n已物理归档 {added} 项。".Trim();
             return result;
+        }
+
+        public static void ShowAllFences()
+        {
+            foreach (Palisade fence in palisades.Values)
+            {
+                fence.SetUserHidden(false);
+            }
+        }
+
+        public static void HideAllFences()
+        {
+            foreach (Palisade fence in palisades.Values)
+            {
+                fence.SetUserHidden(true);
+            }
         }
 
         public static int RestoreManagedItemsToDesktop()
@@ -777,7 +802,19 @@ namespace Palisades
             try
             {
                 string json = File.ReadAllText(path);
-                return JsonSerializer.Deserialize<AiClassifyCache>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new AiClassifyCache();
+                AiClassifyCache? cache = JsonSerializer.Deserialize<AiClassifyCache>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (cache == null)
+                {
+                    return new AiClassifyCache();
+                }
+
+                if (!cache.Fingerprint.StartsWith(CacheVersion, StringComparison.Ordinal))
+                {
+                    return new AiClassifyCache();
+                }
+
+                cache.Fingerprint = cache.Fingerprint.Substring(CacheVersion.Length + 1);
+                return cache;
             }
             catch
             {
@@ -790,8 +827,45 @@ namespace Palisades
             string dir = PDirectory.GetAppDirectory();
             PDirectory.EnsureExists(dir);
             string path = GetCachePath();
+            string originalFingerprint = cache.Fingerprint;
+            cache.Fingerprint = $"{CacheVersion}:{originalFingerprint}";
             string json = JsonSerializer.Serialize(cache, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(path, json);
+            cache.Fingerprint = originalFingerprint;
+        }
+
+        private static int CountManagedShortcuts()
+        {
+            if (Application.Current?.Dispatcher != null && !Application.Current.Dispatcher.CheckAccess())
+            {
+                return Application.Current.Dispatcher.Invoke(ComputeManagedCategoryCount);
+            }
+
+            return ComputeManagedCategoryCount();
+        }
+
+        private static int GetManagedCategoryCount()
+        {
+            if (Application.Current?.Dispatcher != null && !Application.Current.Dispatcher.CheckAccess())
+            {
+                return Application.Current.Dispatcher.Invoke(ComputeManagedCategoryCount);
+            }
+
+            return ComputeManagedCategoryCount();
+        }
+
+        private static int ComputeManagedCategoryCount()
+        {
+            int total = 0;
+            foreach (Palisade fence in palisades.Values)
+            {
+                if (fence.DataContext is PalisadeViewModel vm && AllowedCategories.Contains(vm.Name))
+                {
+                    total += vm.Shortcuts.Count;
+                }
+            }
+
+            return total;
         }
 
         private static string ComputeFingerprint(List<DesktopCandidate> candidates, Helpers.AiSettings settings)

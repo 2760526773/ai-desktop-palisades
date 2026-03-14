@@ -12,6 +12,7 @@ namespace Palisades
         private readonly Mutex _singleInstanceMutex;
         private readonly bool _isPrimaryInstance;
         private bool _isSystemSessionEnding;
+        private TrayIconController? _trayIconController;
 
         internal static bool SuppressDesktopRestoreOnExit { get; set; }
 
@@ -29,6 +30,7 @@ namespace Palisades
 
             SessionEnding += App_SessionEnding;
             SetupSentry();
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
             SessionState previousState = SessionStateHelper.Load();
             SessionStateHelper.MarkSessionStarted();
@@ -49,6 +51,8 @@ namespace Palisades
             {
                 PalisadesManager.CreatePalisade();
             }
+
+            _trayIconController = new TrayIconController();
         }
 
         protected override void OnExit(ExitEventArgs e)
@@ -86,6 +90,7 @@ namespace Palisades
                 _singleInstanceMutex.ReleaseMutex();
             }
             _singleInstanceMutex.Dispose();
+            _trayIconController?.Dispose();
             base.OnExit(e);
         }
 

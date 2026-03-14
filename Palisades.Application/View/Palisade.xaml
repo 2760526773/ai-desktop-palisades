@@ -10,6 +10,7 @@
         xmlns:converters="clr-namespace:Palisades.Converters"
         helpers:WindowBlur.IsEnabled="False"
         helpers:WindowSinker.AlwaysOnBottom="True"
+        helpers:WindowTaskViewHider.HideFromTaskView="True"
         ShowInTaskbar="False"
         mc:Ignorable="d"
         Title="桌面栅栏"

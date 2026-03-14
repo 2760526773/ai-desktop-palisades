@@ -5,11 +5,13 @@ using Palisades.ViewModel;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Shell;
 
 namespace Palisades.View
@@ -23,6 +25,9 @@ namespace Palisades.View
         private double expandedHeight;
         private Point dragStartPoint;
         private Shortcut? pendingDragShortcut;
+        private bool suppressStateChange;
+        private bool suppressVisibility;
+        private bool userHidden;
 
         public Palisade(PalisadeViewModel defaultModel)
         {
@@ -36,6 +41,121 @@ namespace Palisades.View
             RefreshAutoStartMenuState();
 
             Show();
+            SourceInitialized += OnSourceInitialized;
+            StateChanged += OnStateChanged;
+            IsVisibleChanged += OnIsVisibleChanged;
+        }
+
+        private void OnSourceInitialized(object? sender, EventArgs e)
+        {
+            var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
+            source?.AddHook(WndProc);
+        }
+
+        public void SetUserHidden(bool hidden)
+        {
+            userHidden = hidden;
+            if (hidden)
+            {
+                Hide();
+            }
+            else
+            {
+                Show();
+                if (WindowState == WindowState.Minimized)
+                {
+                    WindowState = WindowState.Normal;
+                }
+            }
+        }
+
+        private void OnStateChanged(object? sender, EventArgs e)
+        {
+            if (suppressStateChange)
+            {
+                return;
+            }
+
+            if (WindowState == WindowState.Minimized)
+            {
+                try
+                {
+                    suppressStateChange = true;
+                    WindowState = WindowState.Normal;
+                    Show();
+                }
+                finally
+                {
+                    suppressStateChange = false;
+                }
+            }
+        }
+
+        private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (IsVisible || userHidden || suppressVisibility)
+            {
+                return;
+            }
+
+            try
+            {
+                suppressVisibility = true;
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    Show();
+                    suppressVisibility = false;
+                }));
+            }
+            catch
+            {
+                suppressVisibility = false;
+            }
+        }
+
+        private const int WM_SYSCOMMAND = 0x0112;
+        private const int SC_MINIMIZE = 0xF020;
+        private const int WM_SHOWWINDOW = 0x0018;
+        private const int WM_WINDOWPOSCHANGING = 0x0046;
+        private const uint SWP_HIDEWINDOW = 0x0080;
+        private const uint SWP_SHOWWINDOW = 0x0040;
+
+        private IntPtr WndProc(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == WM_SYSCOMMAND && ((int)wParam & 0xFFF0) == SC_MINIMIZE)
+            {
+                handled = true;
+            }
+
+            if (msg == WM_SHOWWINDOW && wParam == IntPtr.Zero && !userHidden)
+            {
+                handled = true;
+                Dispatcher.BeginInvoke(new Action(Show));
+            }
+
+            if (msg == WM_WINDOWPOSCHANGING && !userHidden)
+            {
+                WINDOWPOS windowPos = Marshal.PtrToStructure<WINDOWPOS>(lParam);
+                if ((windowPos.flags & SWP_HIDEWINDOW) == SWP_HIDEWINDOW)
+                {
+                    windowPos.flags &= ~SWP_HIDEWINDOW;
+                    windowPos.flags |= SWP_SHOWWINDOW;
+                    Marshal.StructureToPtr(windowPos, lParam, false);
+                }
+            }
+
+            return IntPtr.Zero;
+        }
+
+        private struct WINDOWPOS
+        {
+            public IntPtr hwnd;
+            public IntPtr hwndInsertAfter;
+            public int x;
+            public int y;
+            public int cx;
+            public int cy;
+            public uint flags;
         }
 
         private void Header_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
